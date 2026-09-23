@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Südafrika · Reisetagebuch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+  :root{
+    --paper:#F7F2E7;
+    --paper-2:#FEFBF3;
+    --ink:#152238;
+    --ink-soft:#40506a;
+    --sea:#1F6E8C;
+    --sea-deep:#154b60;
+    --ochre:#D08A24;
+    --berry:#a8477c;
+    --line:#e2d9c4;
+    --shadow:0 1px 0 rgba(21,34,56,.04), 0 10px 30px -18px rgba(21,34,56,.35);
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:"Inter",system-ui,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+  a{color:var(--sea-deep);text-underline-offset:2px;text-decoration-thickness:1px}
+  a:hover{color:var(--ink)}
+  :focus-visible{outline:2px solid var(--sea);outline-offset:2px;border-radius:3px}
+  .wrap{max-width:920px;margin:0 auto;padding:0 22px}
+
+  header.hero{padding:54px 0 30px}
+  .eyebrow{font-family:"Space Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--sea-deep)}
+  h1{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;
+    font-size:clamp(40px,9vw,78px);line-height:.96;letter-spacing:-.02em;margin:.14em 0 .12em}
+  .subhead{font-family:"Space Mono",monospace;font-size:12.5px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--ink-soft);margin:0}
+  .stub{margin-top:26px;background:var(--sea-deep);color:#fff;padding:13px 20px;
+    border-radius:var(--radius);box-shadow:var(--shadow);font-family:"Space Mono",monospace;
+    font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase}
+
+  nav.jump{position:sticky;top:0;z-index:1200;background:rgba(247,242,231,.92);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--line);margin-top:30px}
+  nav.jump .wrap{display:flex;gap:4px;overflow-x:auto;padding:10px 22px}
+  nav.jump a{font-family:"Space Mono",monospace;font-size:12px;letter-spacing:.04em;
+    white-space:nowrap;padding:6px 11px;border-radius:20px;text-decoration:none;color:var(--ink-soft)}
+  nav.jump a:hover{background:var(--paper-2);color:var(--ink)}
+  nav.jump a.active{background:var(--sea-deep);color:#fff}
+
+  section{padding:46px 0 8px}
+  .sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:18px}
+  .sec-num{font-family:"Space Mono",monospace;font-size:13px;color:var(--sea);font-weight:700}
+  h2{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;
+    font-size:clamp(24px,4.5vw,34px);letter-spacing:-.015em;margin:0;line-height:1.05}
+
+  #map{height:520px;border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);z-index:1}
+  .leaflet-container{background:#e9eef0;font-family:"Inter",sans-serif}
+  .legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin:16px 0 4px}
+  .legend span{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--ink-soft)}
+  .dot{width:12px;height:12px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.15)}
+  .dash{width:22px;height:0;border-top:3px dashed var(--sea)}
+  .solid{width:22px;height:0;border-top:3px solid var(--sea)}
+  .pop b{font-family:"Bricolage Grotesque",sans-serif;font-size:14px}
+  .pop .d{font-family:"Space Mono",monospace;font-size:11px;color:var(--sea);display:block;margin-top:2px}
+  .pop a{font-family:"Space Mono",monospace;font-size:11.5px;display:inline-block;margin-top:4px}
+
+  .day{background:var(--paper-2);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:20px 20px 6px;margin-bottom:16px}
+  .day-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;
+    border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:4px}
+  .day-date{font-family:"Space Mono",monospace;font-size:12px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--sea)}
+  .day-title{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:20px;letter-spacing:-.01em}
+  .day-n{font-family:"Space Mono",monospace;font-size:11px;color:var(--ink-soft);letter-spacing:.08em;text-transform:uppercase}
+  .slot{display:grid;grid-template-columns:96px 1fr;gap:14px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .day .slot:last-child{border-bottom:none}
+  .slot .t{font-family:"Space Mono",monospace;font-size:12px;color:var(--ink-soft);padding-top:2px}
+  .slot ul{list-style:none;margin:0;padding:0}
+  .slot li{font-size:14.5px;margin-bottom:5px}
+  .slot li:last-child{margin-bottom:0}
+  .slot li.sleep{font-size:13.5px;border-top:1px dashed var(--line);padding-top:6px;margin-top:7px}
+  .slot li.sleep b{font-family:"Space Mono",monospace;font-weight:700;font-size:10.5px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--ochre);margin-right:6px}
+  .slot li.move{color:var(--ink-soft);font-size:13.5px}
+  .maps{font-family:"Space Mono",monospace;font-size:11px;white-space:nowrap;margin-left:4px}
+  .maps::before{content:"↳ ";opacity:.6}
+  .star{display:inline-block;font-family:"Space Mono",monospace;font-size:10px;font-weight:700;
+    color:#fff;background:var(--berry);padding:1px 6px;border-radius:20px;vertical-align:1px;margin-right:6px}
+  .pill{display:inline-block;font-family:"Space Mono",monospace;font-size:10px;font-weight:700;
+    letter-spacing:.1em;text-transform:uppercase;color:#fff;background:var(--ochre);
+    padding:2px 7px;border-radius:20px;vertical-align:middle;margin-left:6px}
+  @media (max-width:640px){.slot{grid-template-columns:1fr;gap:4px}}
+
+  .toplist{margin:0;padding-left:26px;columns:2;column-gap:26px}
+  .toplist li{margin-bottom:10px;font-size:14.5px;break-inside:avoid}
+  .toplist .w{display:block;font-size:12.5px;color:var(--ink-soft)}
+
+  #tomap{position:fixed;right:16px;bottom:16px;z-index:1300;display:none;
+    align-items:center;gap:7px;font-family:"Space Mono",monospace;font-size:12px;
+    letter-spacing:.06em;text-transform:uppercase;text-decoration:none;
+    background:var(--sea-deep);color:#fff;padding:11px 15px;border-radius:24px;
+    box-shadow:0 6px 20px -6px rgba(21,34,56,.5)}
+  #tomap.show{display:inline-flex}
+  #tomap:hover{background:var(--ink);color:#fff}
+
+  footer{padding:44px 0 60px;color:var(--ink-soft);font-size:12.5px;
+    border-top:1px solid var(--line);margin-top:40px}
+
+  @media (max-width:640px){
+    .toplist{columns:1}
+    h1{font-size:clamp(34px,12vw,54px)}
+    #map{height:420px}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Reisetagebuch</div>
+    <h1>Südafrika</h1>
+    <p class="subhead">Mpumalanga · Garden Route · Overberg · Winelands · Kapstadt</p>
+    <div class="stub">9.–26. November 2024</div>
+  </div>
+</header>
+
+<nav class="jump" aria-label="Sprungmarken">
+  <div class="wrap">
+    <a href="#karte">Karte</a>
+    <a href="#route">Route</a>
+    <a href="#gelohnt">Gelohnt</a>
+  </div>
+</nav>
+
+<section id="karte">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">01</span><h2>Karte</h2></div>
+    <div id="map"></div>
+    <div class="legend">
+      <span><span class="dot" style="background:#1F6E8C"></span>Station</span>
+      <span><span class="dot" style="background:#a8477c"></span>★ Empfehlung</span>
+      <span><span class="dot" style="background:#D08A24"></span>Unterkunft</span>
+      <span><span class="solid"></span>Auto</span>
+      <span><span class="dash"></span>Flug</span>
+    </div>
+  </div>
+</section>
+
+<section id="route">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">02</span><h2>Route</h2></div>
+
+    <div class="day">
+      <div class="day-top"><div><div class="day-date">9.–13. November</div><div class="day-title">Johannesburg und Mpumalanga</div></div><div class="day-n">4 Nächte</div></div>
+      <div class="slot"><div class="t">09.11.</div><div><ul>
+        <li class="move">Flug Kairo–Johannesburg, Mietwagen am Flughafen O. R. Tambo</li>
+      </ul></div></div>
+      <div class="slot"><div class="t">10.–12.11.</div><div><ul>
+        <li>Kruger-Nationalpark, Nordteil <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Kruger%20National%20Park%20Letaba" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li>Graskop <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Graskop%20South%20Africa" target="_blank" rel="noopener">Maps ↗</a></li>
+      </ul></div></div>
+      <div class="slot"><div class="t">13.11.</div><div><ul>
+        <li>Blyde River Canyon, Blyde Forest Reserve <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Blyde%20River%20Canyon%20Nature%20Reserve" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li class="move">Rückfahrt nach Johannesburg</li>
+      </ul></div></div>
+    </div>
+
+    <div class="day">
+      <div class="day-top"><div><div class="day-date">13.–16. November</div><div class="day-title">Port Elizabeth und Garden Route</div></div><div class="day-n">4 Nächte</div></div>
+      <div class="slot"><div class="t">13.11.</div><div><ul>
+        <li class="move">Flug Johannesburg–Port Elizabeth</li>
+        <li class="sleep"><b>Nacht</b><a href="https://www.google.com/maps/search/?api=1&query=Brighton%20Lodge%20Port%20Elizabeth" target="_blank" rel="noopener">Brighton Lodge, Port Elizabeth ↗</a></li>
+      </ul></div></div>
+      <div class="slot"><div class="t">14.11.</div><div><ul>
+        <li>Morgens Lauf zum Cape Recife Lighthouse <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Cape%20Recife%20Lighthouse" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li>Tsitsikamma-Nationalpark, Storms River <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Storms%20River%20Mouth%20Tsitsikamma" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li>Abends Lookout Beach, Plettenberg Bay <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Lookout%20Beach%20Plettenberg%20Bay" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li class="sleep"><b>Nacht</b><a href="https://www.google.com/maps/search/?api=1&query=The%20Paper%20Fig%20House%20Plettenberg%20Bay" target="_blank" rel="noopener">The Paper Fig House, Plettenberg Bay ↗</a></li>
+      </ul></div></div>
+      <div class="slot"><div class="t">15.11.</div><div><ul>
+        <li><span class="star">★</span>Morgens Trailrun im Robberg Nature Reserve <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Robberg%20Nature%20Reserve" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li><span class="star">★</span>Abends Wanderung in Nature’s Valley <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Nature%27s%20Valley%20South%20Africa" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li>Abendessen im Blue Rocks Cafe &amp; Grill, Nature’s Valley <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Blue%20Rocks%20Cafe%20Grill%20Nature%27s%20Valley" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li class="sleep"><b>Nacht</b><a href="https://www.google.com/maps/search/?api=1&query=The%20Paper%20Fig%20House%20Plettenberg%20Bay" target="_blank" rel="noopener">The Paper Fig House, Plettenberg Bay ↗</a></li>
+      </ul></div></div>
+      <div class="slot"><div class="t">16.11.</div><div><ul>
+        <li><span class="star">★</span>Wanderung Harkerville/Kranshoek <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Kranshoek%20Harkerville%20hiking%20trail" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li>Knysna <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Knysna%20South%20Africa" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li><span class="star">★</span>Mittagessen bei Freshline Fisheries, Knysna <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Freshline%20Fisheries%20Knysna" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li class="sleep"><b>Nacht</b>Groot Brakrivier</li>
+      </ul></div></div>
+    </div>
+
+    <div class="day">
+      <div class="day-top"><div><div class="day-date">17.–19. November</div><div class="day-title">Overberg und Walker Bay</div></div><div class="day-n">3 Nächte</div></div>
+      <div class="slot"><div class="t">17.11.</div><div><ul>
+        <li><span class="star">★</span>De Hoop Nature Reserve <a class="maps" href="https://www.google.com/maps/search/?api=1&query=De%20Hoop%20Nature%20Reserve" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li>Mittagessen im Bites Beach Cafe, Potberg-Strand</li>
+        <li>Abendessen im Zuidste Kaap Pub &amp; Restaurant, Agulhas <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Zuidste%20Kaap%20Pub%20Restaurant%20Agulhas" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li class="sleep"><b>Nacht</b><a href="https://www.google.com/maps/search/?api=1&query=Oceans%20Guest%20House%20Struisbaai" target="_blank" rel="noopener">Oceans Guest House &amp; Luxurious Apartments, Struisbaai ↗</a></li>
+      </ul></div></div>
+      <div class="slot"><div class="t">18.11.</div><div><ul>
+        <li>Morgens Lauf am Strand von Struisbaai <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Struisbaai%20Beach" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li>Kap Agulhas, Südspitze Afrikas <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Cape%20Agulhas%20Southernmost%20Tip%20of%20Africa" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li>Abends Hermanus <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Hermanus%20South%20Africa" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li class="sleep"><b>Nacht</b><a href="https://www.google.com/maps/search/?api=1&query=Salt%20Shore%20Studios%20Vermont%20Hermanus" target="_blank" rel="noopener">Salt Shore Studios, Vermont bei Hermanus ↗</a></li>
+      </ul></div></div>
+      <div class="slot"><div class="t">19.11.</div><div><ul>
+        <li><span class="star">★</span>Küstenstraße Pringle Bay – Betty’s Bay <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Clarence%20Drive%20Pringle%20Bay" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li>Waterkloof Wine Estate <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Waterkloof%20Wine%20Estate" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li class="sleep"><b>Nacht</b><span class="star">★</span><a href="https://www.google.com/maps/search/?api=1&query=Beaumont%20Family%20Wines%20Bot%20River" target="_blank" rel="noopener">Beaumont Family Wines, Bot River ↗</a></li>
+      </ul></div></div>
+    </div>
+
+    <div class="day">
+      <div class="day-top"><div><div class="day-date">20.–21. November</div><div class="day-title">Winelands und Kap-Halbinsel</div></div><div class="day-n">2 Nächte</div></div>
+      <div class="slot"><div class="t">20.11.</div><div><ul>
+        <li>Mittags über den Franschhoek-Pass <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Franschhoek%20Pass" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li>Faber Restaurant <a class="maps" href="https://www.google.com/maps/search/?api=1&query=FABER%20Restaurant%20South%20Africa" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li class="sleep"><b>Nacht</b><a href="https://www.google.com/maps/search/?api=1&query=Amberg%20Country%20Estate%20Franschhoek" target="_blank" rel="noopener">Amberg Country Estate, Franschhoek-Pass ↗</a></li>
+      </ul></div></div>
+      <div class="slot"><div class="t">21.11.</div><div><ul>
+        <li>Franschhoek <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Franschhoek%20South%20Africa" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li>Mittagessen bei Beaumont Family Wines <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Beaumont%20Family%20Wines%20Bot%20River" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li><span class="star">★</span>Boulders Beach, Pinguinkolonie <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Boulders%20Beach%20Simon%27s%20Town" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li><span class="star">★</span>Kap der Guten Hoffnung <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Cape%20of%20Good%20Hope" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li><span class="star">★</span>Chapman’s Peak Drive <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Chapman%27s%20Peak%20Drive" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li>Abends Pizza in Hout Bay <span class="pill">Schrecklich</span></li>
+        <li class="sleep"><b>Nacht</b>Hout Bay</li>
+      </ul></div></div>
+    </div>
+
+    <div class="day">
+      <div class="day-top"><div><div class="day-date">22.–26. November</div><div class="day-title">Kapstadt</div></div><div class="day-n">4 Nächte</div></div>
+      <div class="slot"><div class="t">22.11.</div><div><ul>
+        <li>Zeitz Museum of Contemporary Art Africa <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Zeitz%20MOCAA%20Cape%20Town" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li>V&amp;A Waterfront <a class="maps" href="https://www.google.com/maps/search/?api=1&query=V%26A%20Waterfront%20Cape%20Town" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li>Abends Jazz im The Blue Room <a class="maps" href="https://www.google.com/maps/search/?api=1&query=The%20Blue%20Room%20Jazz%20Club%20Cape%20Town" target="_blank" rel="noopener">Maps ↗</a></li>
+      </ul></div></div>
+      <div class="slot"><div class="t">23.11.</div><div><ul>
+        <li>Morgens Lauf bis Green Point <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Green%20Point%20Park%20Cape%20Town" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li>Neighbourgoods Market, The Old Biscuit Mill <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Neighbourgoods%20Market%20Old%20Biscuit%20Mill" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li>Tafelberg <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Table%20Mountain%20Cape%20Town" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li>Abends Bloubergstrand <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Bloubergstrand%20Beach" target="_blank" rel="noopener">Maps ↗</a></li>
+      </ul></div></div>
+      <div class="slot"><div class="t">24.11.</div><div><ul>
+        <li><span class="star">★</span>Kirstenbosch National Botanical Garden <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Kirstenbosch%20National%20Botanical%20Garden" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li>Markt an der V&amp;A Waterfront <a class="maps" href="https://www.google.com/maps/search/?api=1&query=V%26A%20Waterfront%20Cape%20Town" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li><span class="star">★</span>Restaurant Upper Union <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Upper%20Union%20Restaurant%20Cape%20Town" target="_blank" rel="noopener">Maps ↗</a></li>
+      </ul></div></div>
+      <div class="slot"><div class="t">25.11.</div><div><ul>
+        <li>Leihrad bei Cycling Friends <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Cycling%20Friends%20Bike%20Rental%20Cape%20Town" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li>Radtour über Constantia, Mittagessen auf Buitenverwachting, Chapman’s Peak <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Buitenverwachting%20Constantia" target="_blank" rel="noopener">Maps ↗</a></li>
+        <li><span class="star">★</span>Black Sheep Restaurant <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Black%20Sheep%20Restaurant%20Kloof%20Street%20Cape%20Town" target="_blank" rel="noopener">Maps ↗</a></li>
+      </ul></div></div>
+      <div class="slot"><div class="t">26.11.</div><div><ul>
+        <li class="move">Weiterflug nach Bangkok</li>
+      </ul></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="gelohnt">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">03</span><h2>Gelohnt</h2></div>
+    <ol class="toplist">
+      <li>Trailrun im Robberg Nature Reserve <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Robberg%20Nature%20Reserve" target="_blank" rel="noopener">Maps ↗</a><span class="w">Plettenberg Bay · 15.11.</span></li>
+      <li>Wanderung in Nature’s Valley <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Nature%27s%20Valley%20South%20Africa" target="_blank" rel="noopener">Maps ↗</a><span class="w">Garden Route · 15.11.</span></li>
+      <li>Wanderung Harkerville/Kranshoek <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Kranshoek%20Harkerville%20hiking%20trail" target="_blank" rel="noopener">Maps ↗</a><span class="w">zwischen Plettenberg Bay und Knysna · 16.11.</span></li>
+      <li>Freshline Fisheries <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Freshline%20Fisheries%20Knysna" target="_blank" rel="noopener">Maps ↗</a><span class="w">Mittagessen, Knysna · 16.11.</span></li>
+      <li>De Hoop Nature Reserve <a class="maps" href="https://www.google.com/maps/search/?api=1&query=De%20Hoop%20Nature%20Reserve" target="_blank" rel="noopener">Maps ↗</a><span class="w">Overberg · 17.11.</span></li>
+      <li>Küstenstraße Pringle Bay – Betty’s Bay <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Clarence%20Drive%20Pringle%20Bay" target="_blank" rel="noopener">Maps ↗</a><span class="w">19.11.</span></li>
+      <li>Beaumont Family Wines <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Beaumont%20Family%20Wines%20Bot%20River" target="_blank" rel="noopener">Maps ↗</a><span class="w">Weingut mit Übernachtung, Bot River · 19.11.</span></li>
+      <li>Boulders Beach, Kap der Guten Hoffnung, Chapman’s Peak Drive <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Cape%20of%20Good%20Hope" target="_blank" rel="noopener">Maps ↗</a><span class="w">Kap-Halbinsel · 21.11.</span></li>
+      <li>Kirstenbosch National Botanical Garden <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Kirstenbosch%20National%20Botanical%20Garden" target="_blank" rel="noopener">Maps ↗</a><span class="w">Kapstadt · 24.11.</span></li>
+      <li>Upper Union <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Upper%20Union%20Restaurant%20Cape%20Town" target="_blank" rel="noopener">Maps ↗</a><span class="w">Restaurant, Kapstadt · 24.11.</span></li>
+      <li>Black Sheep Restaurant <a class="maps" href="https://www.google.com/maps/search/?api=1&query=Black%20Sheep%20Restaurant%20Kloof%20Street%20Cape%20Town" target="_blank" rel="noopener">Maps ↗</a><span class="w">Kapstadt · 25.11.</span></li>
+    </ol>
+  </div>
+</section>
+
+<a id="tomap" href="#karte">↑ Karte</a>
+
+<footer>
+  <div class="wrap">Südafrika · 9.–26.11.2024</div>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function(){
+  var C={stop:"#1F6E8C",star:"#a8477c",sleep:"#D08A24"};
+  // [Name, lat, lng, Typ, Datum, Maps-Suche]
+  var P=[
+    ["Flughafen Johannesburg (O. R. Tambo)",-26.1367,28.2411,"stop","9.11. · 13.11.","OR Tambo International Airport"],
+    ["Kruger-Nationalpark, Nord",-23.83,31.40,"stop","10.–12.11.","Kruger National Park Letaba"],
+    ["Graskop",-24.9333,30.8413,"stop","10.–12.11.","Graskop South Africa"],
+    ["Blyde River Canyon",-24.576,30.801,"stop","13.11.","Blyde River Canyon Nature Reserve"],
+    ["Flughafen Port Elizabeth",-33.9849,25.6173,"stop","13.11.","Chief Dawid Stuurman International Airport"],
+    ["Cape Recife Lighthouse",-34.0294,25.7016,"stop","14.11.","Cape Recife Lighthouse"],
+    ["Storms River, Tsitsikamma",-34.0236,23.8990,"stop","14.11.","Storms River Mouth Tsitsikamma"],
+    ["Lookout Beach",-34.0600,23.3780,"stop","14.11.","Lookout Beach Plettenberg Bay"],
+    ["The Paper Fig House, Plettenberg Bay",-34.0527,23.3716,"sleep","14.–16.11.","The Paper Fig House Plettenberg Bay"],
+    ["Robberg Nature Reserve",-34.1000,23.3850,"star","15.11.","Robberg Nature Reserve"],
+    ["Nature’s Valley",-33.9776,23.5605,"star","15.11.","Nature's Valley South Africa"],
+    ["Harkerville/Kranshoek",-34.0930,23.2370,"star","16.11.","Kranshoek Harkerville hiking trail"],
+    ["Knysna · Freshline Fisheries",-34.0400,23.0480,"star","16.11.","Freshline Fisheries Knysna"],
+    ["Groot Brakrivier",-34.0572,22.2340,"sleep","16.–17.11.","Groot Brakrivier"],
+    ["De Hoop Nature Reserve",-34.4560,20.4200,"star","17.11.","De Hoop Nature Reserve"],
+    ["Oceans Guest House, Struisbaai",-34.8000,20.0500,"sleep","17.–18.11.","Oceans Guest House Struisbaai"],
+    ["Kap Agulhas",-34.8298,20.0024,"stop","17.–18.11.","Cape Agulhas Southernmost Tip of Africa"],
+    ["Hermanus",-34.4187,19.2345,"stop","18.11.","Hermanus South Africa"],
+    ["Salt Shore Studios, Vermont",-34.4167,19.1667,"sleep","18.–19.11.","Salt Shore Studios Vermont Hermanus"],
+    ["Pringle Bay – Betty’s Bay",-34.3500,18.8500,"star","19.11.","Clarence Drive Pringle Bay"],
+    ["Waterkloof Wine Estate",-34.0830,18.8900,"stop","19.11.","Waterkloof Wine Estate"],
+    ["Beaumont Family Wines, Bot River",-34.2317,19.2090,"star","19.–20.11. · Mittag 21.11.","Beaumont Family Wines Bot River"],
+    ["Amberg Country Estate, Franschhoek-Pass",-33.9200,19.1450,"sleep","20.–21.11.","Amberg Country Estate Franschhoek"],
+    ["Franschhoek",-33.9133,19.1169,"stop","21.11.","Franschhoek South Africa"],
+    ["Boulders Beach",-34.1975,18.4510,"star","21.11.","Boulders Beach Simon's Town"],
+    ["Kap der Guten Hoffnung",-34.3568,18.4740,"star","21.11.","Cape of Good Hope"],
+    ["Chapman’s Peak Drive",-34.0880,18.3600,"star","21.11. · 25.11.","Chapman's Peak Drive"],
+    ["Hout Bay",-34.0469,18.3597,"sleep","21.–22.11.","Hout Bay"],
+    ["Zeitz MOCAA · V&amp;A Waterfront",-33.9060,18.4210,"stop","22.11. · 24.11.","Zeitz MOCAA Cape Town"],
+    ["Green Point",-33.9036,18.4045,"stop","23.11.","Green Point Park Cape Town"],
+    ["The Old Biscuit Mill",-33.9275,18.4574,"stop","23.11.","Neighbourgoods Market Old Biscuit Mill"],
+    ["Tafelberg",-33.9580,18.4030,"stop","23.11.","Table Mountain Cape Town"],
+    ["Bloubergstrand",-33.8076,18.4616,"stop","23.11.","Bloubergstrand Beach"],
+    ["Kirstenbosch",-33.9875,18.4327,"star","24.11.","Kirstenbosch National Botanical Garden"],
+    ["Buitenverwachting, Constantia",-34.0426,18.4192,"stop","25.11.","Buitenverwachting Constantia"]
+  ];
+  var DRIVE1=[[-26.1367,28.2411],[-23.83,31.40],[-24.9333,30.8413],[-24.576,30.801],[-26.1367,28.2411]];
+  var FLY=[[-26.1367,28.2411],[-33.9849,25.6173]];
+  var DRIVE2=[[-33.9849,25.6173],[-34.0294,25.7016],[-34.0236,23.8990],[-34.0527,23.3716],[-34.1000,23.3850],
+    [-33.9776,23.5605],[-34.0527,23.3716],[-34.0930,23.2370],[-34.0400,23.0480],[-34.0572,22.2340],[-34.4560,20.4200],
+    [-34.8298,20.0024],[-34.8000,20.0500],[-34.4187,19.2345],[-34.4167,19.1667],[-34.3500,18.8500],[-34.0830,18.8900],
+    [-34.2317,19.2090],[-33.9200,19.1450],[-33.9133,19.1169],[-34.2317,19.2090],[-34.1975,18.4510],[-34.3568,18.4740],
+    [-34.0880,18.3600],[-34.0469,18.3597],[-33.9060,18.4210]];
+  function link(q){return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(q);}
+  try{
+    var map=L.map('map',{scrollWheelZoom:false});
+    var esri='https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/';
+    L.tileLayer(esri+'World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',{
+      attribution:'Kartendaten &copy; Esri, HERE, Garmin, &copy; OpenStreetMap-Mitwirkende',maxZoom:16}).addTo(map);
+    L.tileLayer(esri+'World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}',{maxZoom:16}).addTo(map);
+    L.polyline(DRIVE1,{color:'#1F6E8C',weight:3,opacity:.7}).addTo(map);
+    L.polyline(DRIVE2,{color:'#1F6E8C',weight:3,opacity:.7}).addTo(map);
+    L.polyline(FLY,{color:'#1F6E8C',weight:3,opacity:.7,dashArray:'6,8'}).addTo(map);
+    P.forEach(function(p){
+      L.circleMarker([p[1],p[2]],{radius:p[3]==='stop'?6:8,color:'#fff',weight:2,fillColor:C[p[3]],fillOpacity:1})
+        .addTo(map)
+        .bindPopup('<div class="pop"><b>'+(p[3]==='star'?'★ ':'')+p[0]+'</b><span class="d">'+p[4]+'</span>'
+          +'<a href="'+link(p[5])+'" target="_blank" rel="noopener">In Google Maps ↗</a></div>');
+    });
+    map.fitBounds([[-34.9,18.2],[-23.6,31.6]],{padding:[16,16]});
+    map.on('click',function(){ if(!map.scrollWheelZoom.enabled()){map.scrollWheelZoom.enable();} });
+  }catch(e){
+    document.getElementById('map').innerHTML='<div style="padding:20px;font-size:14px;color:#40506a">Karte konnte nicht geladen werden.</div>';
+  }
+})();
+</script>
+<script>
+(function(){
+  var nav=document.querySelector('nav.jump'), navwrap=nav.querySelector('.wrap');
+  var links=Array.prototype.slice.call(nav.querySelectorAll('a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'));});
+  var btn=document.getElementById('tomap'), cur=-1, ticking=false;
+  function update(){
+    ticking=false;
+    var y=window.scrollY+nav.offsetHeight+60, idx=0;
+    for(var i=0;i<secs.length;i++){ if(secs[i] && secs[i].offsetTop<=y) idx=i; }
+    if(idx!==cur){
+      cur=idx;
+      links.forEach(function(a,i){ a.classList.toggle('active', i===idx); });
+      var a=links[idx], l=a.offsetLeft-(navwrap.clientWidth-a.offsetWidth)/2;
+      navwrap.scrollTo({left:Math.max(0,l),behavior:'smooth'});
+    }
+    btn.classList.toggle('show', window.scrollY>700);
+  }
+  window.addEventListener('scroll',function(){ if(!ticking){ ticking=true; requestAnimationFrame(update);} },{passive:true});
+  window.addEventListener('resize',update);
+  update();
+})();
+</script>
+</body>
+</html>
